@@ -21,13 +21,13 @@ Development uses PostgreSQL by default. Configure the local connection string in
 
 ```json
 "ConnectionStrings": {
-  "DefaultConnection": "Host=localhost;Port=5432;Database=lowcortisol_platform;Username=postgres;Password=123456789"
+  "DefaultConnection": "Host=localhost;Port=5432;Database=lowcortisol_db;Username=postgres;Password=123456789"
 }
 ```
 
 Do not place production credentials in source. For production, provide
-`ConnectionStrings__DefaultConnection` through environment variables or a secure
-deployment secret store.
+`DATABASE_URL`, `ConnectionStrings__DefaultConnection` or the `DATABASE_*`
+environment variables through Render or a secure deployment secret store.
 
 ## Persistence Provider
 
@@ -36,6 +36,7 @@ Default development provider:
 ```json
 "Persistence": {
   "Provider": "PostgreSQL",
+  "CreateDatabaseOnStartup": true,
   "SeedOnStartup": true
 }
 ```
@@ -43,6 +44,10 @@ Default development provider:
 Set `Persistence:Provider` to `InMemory` to use the demo adapter without
 PostgreSQL. The InMemory adapter is kept as fallback/demo and should not replace
 the PostgreSQL adapter for persistence QA.
+
+When `CreateDatabaseOnStartup` is `true`, the API creates the local PostgreSQL
+database `lowcortisol_db` if it does not exist. This is intended for local
+development only and is disabled in production.
 
 ## Migrations
 
@@ -79,7 +84,7 @@ database has no `Site` records. The demo seed prepares:
 
 ## Swagger / OpenAPI
 
-In Development:
+Available in local and deployed environments:
 
 - OpenAPI JSON: `http://localhost:5077/openapi/v1.json`
 - Swagger UI: `http://localhost:5077/swagger`
