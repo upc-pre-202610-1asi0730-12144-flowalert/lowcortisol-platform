@@ -4,19 +4,22 @@ namespace LowCortisol.Platform.API.Shared.Infrastructure.Persistence.EntityFrame
 
 public static class PostgreSqlConnectionStringFactory
 {
+    private const string DefaultDatabaseName = "lowcortisol_db";
+    private const string LegacyLocalDatabaseName = "lowcortisol_platform";
+
     public static string Create(IConfiguration configuration)
     {
         var databaseUrl = configuration["DATABASE_URL"];
         if (!string.IsNullOrWhiteSpace(databaseUrl))
-            return FromDatabaseUrl(databaseUrl);
+            return NormalizeLocalDatabaseName(FromDatabaseUrl(databaseUrl));
 
         var connectionString = configuration.GetConnectionString("DefaultConnection");
         if (!string.IsNullOrWhiteSpace(connectionString) && !connectionString.Contains('%'))
-            return connectionString;
+            return NormalizeLocalDatabaseName(connectionString);
 
         var host = configuration["DATABASE_HOST"];
         var port = configuration["DATABASE_PORT"] ?? "5432";
-        var database = configuration["DATABASE_SCHEMA"] ?? configuration["DATABASE_NAME"];
+        var database = configuration["DATABASE_NAME"] ?? DefaultDatabaseName;
         var username = configuration["DATABASE_USER"];
         var password = configuration["DATABASE_PASSWORD"];
 
@@ -36,7 +39,7 @@ public static class PostgreSqlConnectionStringFactory
             SslMode = SslMode.Require
         };
 
-        return builder.ConnectionString;
+        return NormalizeLocalDatabaseName(builder.ConnectionString);
     }
 
     private static string FromDatabaseUrl(string databaseUrl)
@@ -55,4 +58,20 @@ public static class PostgreSqlConnectionStringFactory
 
         return builder.ConnectionString;
     }
+
+    private static string NormalizeLocalDatabaseName(string connectionString)
+    {
+        var builder = new NpgsqlConnectionStringBuilder(connectionString);
+        if (IsLocalHost(builder.Host) &&
+            (string.IsNullOrWhiteSpace(builder.Database) ||
+             builder.Database.Equals(LegacyLocalDatabaseName, StringComparison.OrdinalIgnoreCase)))
+        {
+            builder.Database = DefaultDatabaseName;
+        }
+
+        return builder.ConnectionString;
+    }
+
+    private static bool IsLocalHost(string? host) =>
+        host is "localhost" or "127.0.0.1" or "::1";
 }
