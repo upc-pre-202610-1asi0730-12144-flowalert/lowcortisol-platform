@@ -1,0 +1,25 @@
+namespace LowCortisol.Platform.API.Notification.Interfaces.Rest.Resources;
+
+public record AlertResource(
+    Guid Id,
+    string Title,
+    string Description,
+    string Severity,
+    string Status,
+    string SourceType,
+    Guid? AnomalyId,
+    Guid? ReadingId,
+    Guid SiteId,
+    Guid RoomId,
+    Guid DeviceGroupId,
+    Guid DeviceId,
+    Guid SensorId,
+    string ResourceType,
+    int MinutesToAcknowledge,
+    int MinutesToResolve,
+    DateTime? AcknowledgedAt,
+    DateTime? ResolvedAt,
+    DateTime? ClosedAt,
+    DateTime CreatedAt,
+    DateTime UpdatedAt,
+    IEnumerable<AlertDeliveryResource> Deliveries);
