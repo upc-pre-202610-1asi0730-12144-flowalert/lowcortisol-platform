@@ -19,6 +19,7 @@ using LowCortisol.Platform.API.Notification.Application.Internal.QueryServices;
 using LowCortisol.Platform.API.Notification.Application.QueryServices;
 using LowCortisol.Platform.API.Notification.Domain.Repositories;
 using LowCortisol.Platform.API.Shared.Domain.Repositories;
+using LowCortisol.Platform.API.Shared.Infrastructure.Persistence.EntityFrameworkCore.Configuration;
 using LowCortisol.Platform.API.Shared.Infrastructure.Persistence.EntityFrameworkCore.Interceptors;
 using LowCortisol.Platform.API.Shared.Infrastructure.Persistence.EntityFrameworkCore.Seed;
 using LowCortisol.Platform.API.Shared.Interfaces.Rest.OpenApi;
@@ -27,6 +28,7 @@ using LowCortisol.Platform.API.Workplace.Application.Internal.CommandServices;
 using LowCortisol.Platform.API.Workplace.Application.Internal.QueryServices;
 using LowCortisol.Platform.API.Workplace.Application.QueryServices;
 using LowCortisol.Platform.API.Workplace.Domain.Repositories;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 
@@ -67,6 +69,13 @@ const string frontendCorsPolicy = "FrontendCorsPolicy";
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
 builder.Services.AddControllers();
 builder.Services.Configure<RouteOptions>(options => options.LowercaseUrls = true);
 builder.Services.AddOpenApi();
@@ -87,6 +96,7 @@ builder.Services.AddCors(options =>
 
 var persistenceProvider = builder.Configuration["Persistence:Provider"] ?? "PostgreSQL";
 var useInMemory = persistenceProvider.Equals("InMemory", StringComparison.OrdinalIgnoreCase);
+string? connectionString = null;
 
 if (useInMemory)
 {
@@ -109,8 +119,7 @@ if (useInMemory)
 }
 else
 {
-    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-        ?? throw new InvalidOperationException("Connection string 'DefaultConnection' was not configured.");
+    connectionString = PostgreSqlConnectionStringFactory.Create(builder.Configuration);
 
     builder.Services.AddSingleton<AuditableEntityInterceptor>();
     builder.Services.AddDbContext<EfAppDbContext>((serviceProvider, options) =>
@@ -165,15 +174,21 @@ builder.Services.AddScoped<INotificationSummaryQueryService, NotificationSummary
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
+app.UseForwardedHeaders();
+app.MapOpenApi();
+app.MapLightweightSwaggerUi();
+
+if (!useInMemory && app.Configuration.GetValue<bool>("Persistence:CreateDatabaseOnStartup"))
 {
-    app.MapOpenApi();
-    app.MapLightweightSwaggerUi();
+    await PostgreSqlDatabaseInitializer.EnsureDatabaseCreatedAsync(connectionString!, app.Logger);
 }
 
 if (!useInMemory && app.Configuration.GetValue<bool>("Persistence:SeedOnStartup"))
 {
     using var scope = app.Services.CreateScope();
+    var context = scope.ServiceProvider.GetRequiredService<EfAppDbContext>();
+    await context.Database.MigrateAsync();
+
     var seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
     await seeder.SeedAsync();
 }
