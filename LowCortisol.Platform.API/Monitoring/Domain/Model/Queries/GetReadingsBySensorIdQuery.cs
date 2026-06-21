@@ -1,0 +1,3 @@
+namespace LowCortisol.Platform.API.Monitoring.Domain.Model.Queries;
+
+public record GetReadingsBySensorIdQuery(Guid SensorId);
