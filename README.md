@@ -86,8 +86,21 @@ database has no `Site` records. The demo seed prepares:
 
 Available in local and deployed environments:
 
-- OpenAPI JSON: `http://localhost:5077/openapi/v1.json`
+- OpenAPI JSON: `http://localhost:5077/swagger/v1/swagger.json`
 - Swagger UI: `http://localhost:5077/swagger`
+
+For Render, use the deployed service URL with the same paths:
+
+- OpenAPI JSON: `https://<render-service>.onrender.com/swagger/v1/swagger.json`
+- Swagger UI: `https://<render-service>.onrender.com/swagger`
+
+## Bounded Context Status
+
+The backend exposes real REST contracts only for implemented platform contexts.
+Plan and Support are documented as product contexts prepared for future backend
+implementation; no fake controllers or placeholder endpoints are exposed.
+
+See [docs/bounded-context-status.md](docs/bounded-context-status.md).
 
 ## Manual QA Flow
 
