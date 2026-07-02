@@ -40,7 +40,7 @@ public sealed class NotificationChannelsController : ControllerBase
     }
 
     [HttpPost("notification-channels")]
-    [ProducesResponseType(typeof(NotificationChannelResource), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(NotificationChannelResource), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CreateNotificationChannel(
         CreateNotificationChannelResource resource,
@@ -53,7 +53,8 @@ public sealed class NotificationChannelsController : ControllerBase
         return NotificationActionResultAssembler.ToActionResult(
             this,
             result,
-            NotificationChannelResourceFromEntityAssembler.ToResourceFromEntity);
+            NotificationChannelResourceFromEntityAssembler.ToResourceFromEntity,
+            resource => Created("/api/v1/notification-channels", resource));
     }
 
     [HttpPost("notification-channels/{channelId:guid}/activate")]

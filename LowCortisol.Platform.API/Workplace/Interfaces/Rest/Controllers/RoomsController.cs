@@ -31,7 +31,7 @@ public sealed class RoomsController : ControllerBase
     }
 
     [HttpPost("{roomId:guid}/device-groups")]
-    [ProducesResponseType(typeof(DeviceGroupResource), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(DeviceGroupResource), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
@@ -46,6 +46,7 @@ public sealed class RoomsController : ControllerBase
         return WorkplaceActionResultAssembler.ToActionResult(
             this,
             result,
-            DeviceGroupResourceFromEntityAssembler.ToResourceFromEntity);
+            DeviceGroupResourceFromEntityAssembler.ToResourceFromEntity,
+            resource => Created($"/api/v1/rooms/{roomId}/device-groups", resource));
     }
 }

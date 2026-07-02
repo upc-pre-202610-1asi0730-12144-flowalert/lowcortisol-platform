@@ -4,6 +4,7 @@ using LowCortisol.Platform.API.Notification.Domain.Model.Commands;
 using LowCortisol.Platform.API.Notification.Domain.Model.Queries;
 using LowCortisol.Platform.API.Notification.Interfaces.Rest.Resources;
 using LowCortisol.Platform.API.Notification.Interfaces.Rest.Transform;
+using LowCortisol.Platform.API.Shared.Interfaces.Rest.ProblemDetails;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LowCortisol.Platform.API.Notification.Interfaces.Rest.Controllers;
@@ -58,7 +59,7 @@ public sealed class IncidentsController : ControllerBase
         var incident = await _incidentQueryService.Handle(new GetIncidentByIdQuery(incidentId), cancellationToken);
         if (incident is null)
         {
-            return NotFound();
+            return this.NotFoundProblem("Incident was not found.", $"Incident '{incidentId}' does not exist.");
         }
 
         return Ok(IncidentResourceFromEntityAssembler.ToResourceFromEntity(incident));
@@ -72,14 +73,14 @@ public sealed class IncidentsController : ControllerBase
         var incident = await _incidentQueryService.Handle(new GetIncidentByIdQuery(incidentId), cancellationToken);
         if (incident is null)
         {
-            return NotFound();
+            return this.NotFoundProblem("Incident actions were not found.", $"Incident '{incidentId}' does not exist.");
         }
 
         return Ok(incident.Actions.Select(IncidentActionResourceFromEntityAssembler.ToResourceFromEntity));
     }
 
     [HttpPost("alerts/{alertId:guid}/incidents")]
-    [ProducesResponseType(typeof(IncidentResource), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IncidentResource), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> CreateIncidentFromAlert(Guid alertId, CancellationToken cancellationToken)
@@ -91,7 +92,8 @@ public sealed class IncidentsController : ControllerBase
         return NotificationActionResultAssembler.ToActionResult(
             this,
             result,
-            IncidentResourceFromEntityAssembler.ToResourceFromEntity);
+            IncidentResourceFromEntityAssembler.ToResourceFromEntity,
+            resource => CreatedAtAction(nameof(GetIncidentById), new { incidentId = resource.Id }, resource));
     }
 
     [HttpPost("incidents/{incidentId:guid}/assign")]

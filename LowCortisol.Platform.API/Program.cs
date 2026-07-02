@@ -5,6 +5,14 @@ using LowCortisol.Platform.API.DeviceControl.Application.Internal.CommandService
 using LowCortisol.Platform.API.DeviceControl.Application.Internal.QueryServices;
 using LowCortisol.Platform.API.DeviceControl.Application.QueryServices;
 using LowCortisol.Platform.API.DeviceControl.Domain.Repositories;
+using LowCortisol.Platform.API.Iam.Application.CommandServices;
+using LowCortisol.Platform.API.Iam.Application.Internal.CommandServices;
+using LowCortisol.Platform.API.Iam.Application.Internal.QueryServices;
+using LowCortisol.Platform.API.Iam.Application.OutboundServices;
+using LowCortisol.Platform.API.Iam.Application.QueryServices;
+using LowCortisol.Platform.API.Iam.Domain.Repositories;
+using LowCortisol.Platform.API.Iam.Infrastructure.Hashing.BCrypt;
+using LowCortisol.Platform.API.Iam.Infrastructure.Tokens.Jwt;
 using LowCortisol.Platform.API.Monitoring.Application.CommandServices;
 using LowCortisol.Platform.API.Monitoring.Application.Internal.CommandServices;
 using LowCortisol.Platform.API.Monitoring.Application.Internal.QueryServices;
@@ -29,10 +37,14 @@ using LowCortisol.Platform.API.Workplace.Application.Internal.QueryServices;
 using LowCortisol.Platform.API.Workplace.Application.QueryServices;
 using LowCortisol.Platform.API.Workplace.Domain.Repositories;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi;
+using System.Globalization;
 
 using EfAppDbContext = LowCortisol.Platform.API.Shared.Infrastructure.Persistence.EntityFrameworkCore.Configuration.AppDbContext;
+using EfUserRepository = LowCortisol.Platform.API.Iam.Infrastructure.Persistence.EntityFrameworkCore.Repositories.UserRepository;
 using EfAnomalyRepository = LowCortisol.Platform.API.Monitoring.Infrastructure.Persistence.EntityFrameworkCore.Repositories.AnomalyRepository;
 using EfAlertRepository = LowCortisol.Platform.API.Notification.Infrastructure.Persistence.EntityFrameworkCore.Repositories.AlertRepository;
 using EfConsumptionReadingRepository = LowCortisol.Platform.API.Monitoring.Infrastructure.Persistence.EntityFrameworkCore.Repositories.ConsumptionReadingRepository;
@@ -51,6 +63,7 @@ using EfValveRepository = LowCortisol.Platform.API.DeviceControl.Infrastructure.
 using InMemoryAnomalyRepository = LowCortisol.Platform.API.Monitoring.Infrastructure.Persistence.InMemory.Repositories.AnomalyRepository;
 using InMemoryAlertRepository = LowCortisol.Platform.API.Notification.Infrastructure.Persistence.InMemory.Repositories.AlertRepository;
 using InMemoryAppDbContext = LowCortisol.Platform.API.Shared.Infrastructure.Persistence.InMemory.AppDbContext;
+using InMemoryUserRepository = LowCortisol.Platform.API.Iam.Infrastructure.Persistence.InMemory.Repositories.UserRepository;
 using InMemoryConsumptionReadingRepository = LowCortisol.Platform.API.Monitoring.Infrastructure.Persistence.InMemory.Repositories.ConsumptionReadingRepository;
 using InMemoryDeviceGroupRepository = LowCortisol.Platform.API.Workplace.Infrastructure.Persistence.InMemory.Repositories.DeviceGroupRepository;
 using InMemoryDeviceCommandRepository = LowCortisol.Platform.API.DeviceControl.Infrastructure.Persistence.InMemory.Repositories.DeviceCommandRepository;
@@ -77,8 +90,36 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 });
 
 builder.Services.AddControllers();
+builder.Services.AddProblemDetails();
+builder.Services.AddLocalization();
+builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
 builder.Services.Configure<RouteOptions>(options => options.LowercaseUrls = true);
-builder.Services.AddOpenApi();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.EnableAnnotations();
+    options.SupportNonNullableReferenceTypes();
+    options.SwaggerDoc(
+        "v1",
+        new OpenApiInfo
+        {
+            Title = "LowCortisol Platform API",
+            Version = "v1",
+            Description = "REST API for LowCortisol workplace, device control, monitoring and notification operations."
+        });
+    options.AddSecurityDefinition(
+        "Bearer",
+        new OpenApiSecurityScheme
+        {
+            Description = "JWT Authorization header using the Bearer scheme.",
+            Name = "Authorization",
+            In = ParameterLocation.Header,
+            Type = SecuritySchemeType.Http,
+            Scheme = "bearer",
+            BearerFormat = "JWT"
+        });
+    options.OperationFilter<LowCortisolOperationFilter>();
+});
 
 var allowedOrigins = builder.Configuration
     .GetSection("Cors:AllowedOrigins")
@@ -116,6 +157,7 @@ if (useInMemory)
     builder.Services.AddScoped<IAlertRepository, InMemoryAlertRepository>();
     builder.Services.AddScoped<IIncidentRepository, InMemoryIncidentRepository>();
     builder.Services.AddScoped<INotificationChannelRepository, InMemoryNotificationChannelRepository>();
+    builder.Services.AddScoped<IUserRepository, InMemoryUserRepository>();
 }
 else
 {
@@ -144,8 +186,13 @@ else
     builder.Services.AddScoped<IAlertRepository, EfAlertRepository>();
     builder.Services.AddScoped<IIncidentRepository, EfIncidentRepository>();
     builder.Services.AddScoped<INotificationChannelRepository, EfNotificationChannelRepository>();
+    builder.Services.AddScoped<IUserRepository, EfUserRepository>();
 }
 
+builder.Services.AddScoped<IPasswordHashingService, BCryptPasswordHashingService>();
+builder.Services.AddScoped<ITokenService, JwtTokenService>();
+builder.Services.AddScoped<IAuthenticationCommandService, AuthenticationCommandService>();
+builder.Services.AddScoped<IUserQueryService, UserQueryService>();
 builder.Services.AddScoped<ISiteCommandService, SiteCommandService>();
 builder.Services.AddScoped<ISiteQueryService, SiteQueryService>();
 builder.Services.AddScoped<IDeviceControlContextFacade, DeviceControlContextFacade>();
@@ -174,9 +221,21 @@ builder.Services.AddScoped<INotificationSummaryQueryService, NotificationSummary
 
 var app = builder.Build();
 
+var supportedCultures = new[] { "es", "en", "pt" };
+var requestLocalizationOptions = new RequestLocalizationOptions()
+    .SetDefaultCulture("es")
+    .AddSupportedCultures(supportedCultures)
+    .AddSupportedUICultures(supportedCultures);
+
 app.UseForwardedHeaders();
-app.MapOpenApi();
-app.MapLightweightSwaggerUi();
+app.UseExceptionHandler();
+app.UseRequestLocalization(requestLocalizationOptions);
+app.UseSwagger();
+app.UseSwaggerUI(options =>
+{
+    options.SwaggerEndpoint("/swagger/v1/swagger.json", "LowCortisol Platform API v1");
+    options.RoutePrefix = "swagger";
+});
 
 if (!useInMemory && app.Configuration.GetValue<bool>("Persistence:CreateDatabaseOnStartup"))
 {

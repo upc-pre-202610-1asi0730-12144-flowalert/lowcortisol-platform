@@ -8,6 +8,7 @@ using LowCortisol.Platform.API.Notification.Domain.Model.Commands;
 using LowCortisol.Platform.API.Notification.Domain.Model.Queries;
 using LowCortisol.Platform.API.Notification.Interfaces.Rest.Resources;
 using LowCortisol.Platform.API.Notification.Interfaces.Rest.Transform;
+using LowCortisol.Platform.API.Shared.Interfaces.Rest.ProblemDetails;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LowCortisol.Platform.API.Notification.Interfaces.Rest.Controllers;
@@ -70,14 +71,14 @@ public sealed class AlertsController : ControllerBase
         var alert = await _alertQueryService.Handle(new GetAlertByIdQuery(alertId), cancellationToken);
         if (alert is null)
         {
-            return NotFound();
+            return this.NotFoundProblem("Alert was not found.", $"Alert '{alertId}' does not exist.");
         }
 
         return Ok(AlertResourceFromEntityAssembler.ToResourceFromEntity(alert));
     }
 
     [HttpPost("alerts/from-critical-anomaly")]
-    [ProducesResponseType(typeof(NotificationRiskResponseResource), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(NotificationRiskResponseResource), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CreateAlertFromCriticalAnomaly(
         CreateAlertFromCriticalAnomalyResource resource,
@@ -112,7 +113,8 @@ public sealed class AlertsController : ControllerBase
         return NotificationActionResultAssembler.ToActionResult(
             this,
             result,
-            NotificationRiskResponseResourceFromResultAssembler.ToResourceFromResult);
+            NotificationRiskResponseResourceFromResultAssembler.ToResourceFromResult,
+            resource => Created($"/api/v1/alerts/{resource.Alert.Id}", resource));
     }
 
     [HttpPost("alerts/{alertId:guid}/acknowledge")]
