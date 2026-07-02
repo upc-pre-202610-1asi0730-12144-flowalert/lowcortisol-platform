@@ -23,7 +23,7 @@ public sealed class ReadingsController : ControllerBase
     }
 
     [HttpPost("readings")]
-    [ProducesResponseType(typeof(RegisterConsumptionReadingResultResource), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(RegisterConsumptionReadingResultResource), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RegisterReading(
@@ -36,7 +36,8 @@ public sealed class ReadingsController : ControllerBase
         return MonitoringActionResultAssembler.ToActionResult(
             this,
             result,
-            RegisterConsumptionReadingResultResourceFromResultAssembler.ToResourceFromResult);
+            RegisterConsumptionReadingResultResourceFromResultAssembler.ToResourceFromResult,
+            resource => Created("/api/v1/readings/recent", resource));
     }
 
     [HttpGet("readings/recent")]

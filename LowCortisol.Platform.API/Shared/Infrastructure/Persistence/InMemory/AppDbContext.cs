@@ -1,6 +1,7 @@
 using LowCortisol.Platform.API.DeviceControl.Domain.Model.Aggregates;
 using LowCortisol.Platform.API.DeviceControl.Domain.Model.Entities;
 using LowCortisol.Platform.API.DeviceControl.Domain.Model.ValueObjects;
+using LowCortisol.Platform.API.Iam.Domain.Model.Aggregates;
 using LowCortisol.Platform.API.Monitoring.Domain.Model.Entities;
 using LowCortisol.Platform.API.Monitoring.Domain.Model.ValueObjects;
 using LowCortisol.Platform.API.Notification.Domain.Model.Aggregates;
@@ -39,6 +40,7 @@ public sealed class AppDbContext
     public List<Incident> Incidents { get; } = [];
     public List<NotificationChannel> NotificationChannels { get; } = [];
     public List<AlertDelivery> AlertDeliveries { get; } = [];
+    public List<User> Users { get; } = [];
 
     public Task SaveChangesAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
 

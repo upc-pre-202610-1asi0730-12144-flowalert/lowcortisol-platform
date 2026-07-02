@@ -4,6 +4,7 @@ using LowCortisol.Platform.API.Workplace.Application.QueryServices;
 using LowCortisol.Platform.API.Workplace.Domain.Model.Queries;
 using LowCortisol.Platform.API.Workplace.Interfaces.Rest.Resources;
 using LowCortisol.Platform.API.Workplace.Interfaces.Rest.Transform;
+using LowCortisol.Platform.API.Shared.Interfaces.Rest.ProblemDetails;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LowCortisol.Platform.API.Workplace.Interfaces.Rest.Controllers;
@@ -38,16 +39,18 @@ public sealed class SitesController : ControllerBase
 
     [HttpGet("{siteId:guid}")]
     [ProducesResponseType(typeof(SiteResource), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetSiteById(Guid siteId, CancellationToken cancellationToken)
     {
         var site = await _siteQueryService.Handle(new GetSiteByIdQuery(siteId), cancellationToken);
 
-        return site is null ? NotFound() : Ok(SiteResourceFromEntityAssembler.ToResourceFromEntity(site));
+        return site is null
+            ? this.NotFoundProblem("Site was not found.", $"Site '{siteId}' does not exist.")
+            : Ok(SiteResourceFromEntityAssembler.ToResourceFromEntity(site));
     }
 
     [HttpPost]
-    [ProducesResponseType(typeof(SiteResource), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(SiteResource), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> CreateSite(
@@ -60,7 +63,8 @@ public sealed class SitesController : ControllerBase
         return WorkplaceActionResultAssembler.ToActionResult(
             this,
             result,
-            SiteResourceFromEntityAssembler.ToResourceFromEntity);
+            SiteResourceFromEntityAssembler.ToResourceFromEntity,
+            resource => CreatedAtAction(nameof(GetSiteById), new { siteId = resource.Id }, resource));
     }
 
     [HttpGet("{siteId:guid}/rooms")]
@@ -74,7 +78,7 @@ public sealed class SitesController : ControllerBase
     }
 
     [HttpPost("{siteId:guid}/rooms")]
-    [ProducesResponseType(typeof(RoomResource), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(RoomResource), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
@@ -89,16 +93,20 @@ public sealed class SitesController : ControllerBase
         return WorkplaceActionResultAssembler.ToActionResult(
             this,
             result,
-            RoomResourceFromEntityAssembler.ToResourceFromEntity);
+            RoomResourceFromEntityAssembler.ToResourceFromEntity,
+            resource => Created($"/api/v1/sites/{siteId}/rooms", resource));
     }
 
     [HttpGet("{siteId:guid}/physical-model")]
     [ProducesResponseType(typeof(SitePhysicalModelResource), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetPhysicalModel(Guid siteId, CancellationToken cancellationToken)
     {
         var site = await _siteQueryService.Handle(new GetSitePhysicalModelByIdQuery(siteId), cancellationToken);
-        if (site is null) return NotFound();
+        if (site is null)
+        {
+            return this.NotFoundProblem("Site physical model was not found.", $"Site '{siteId}' does not exist.");
+        }
 
         var deviceGroupIds = site.Rooms.SelectMany(room => room.DeviceGroups).Select(group => group.Id).ToList();
         var inventories = await _deviceControlContextFacade.GetInventoryByDeviceGroupIdsAsync(

@@ -1,5 +1,6 @@
 using LowCortisol.Platform.API.DeviceControl.Domain.Model.Aggregates;
 using LowCortisol.Platform.API.DeviceControl.Domain.Model.Entities;
+using LowCortisol.Platform.API.Iam.Domain.Model.Aggregates;
 using LowCortisol.Platform.API.Monitoring.Domain.Model.Entities;
 using LowCortisol.Platform.API.Notification.Domain.Model.Aggregates;
 using LowCortisol.Platform.API.Notification.Domain.Model.Entities;
@@ -35,6 +36,7 @@ public sealed class AppDbContext : DbContext
     public DbSet<AlertDelivery> AlertDeliveries => Set<AlertDelivery>();
     public DbSet<IncidentAction> IncidentActions => Set<IncidentAction>();
     public DbSet<IncidentAssignment> IncidentAssignments => Set<IncidentAssignment>();
+    public DbSet<User> Users => Set<User>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

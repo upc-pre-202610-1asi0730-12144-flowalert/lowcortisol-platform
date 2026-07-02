@@ -23,7 +23,7 @@ public sealed class ThresholdsController : ControllerBase
     }
 
     [HttpPost("thresholds")]
-    [ProducesResponseType(typeof(ThresholdResource), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ThresholdResource), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CreateThreshold(
         CreateThresholdResource resource,
@@ -35,7 +35,8 @@ public sealed class ThresholdsController : ControllerBase
         return MonitoringActionResultAssembler.ToActionResult(
             this,
             result,
-            ThresholdResourceFromEntityAssembler.ToResourceFromEntity);
+            ThresholdResourceFromEntityAssembler.ToResourceFromEntity,
+            resource => Created("/api/v1/thresholds/active", resource));
     }
 
     [HttpGet("thresholds/active")]

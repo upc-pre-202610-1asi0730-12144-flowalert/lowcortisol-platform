@@ -1,4 +1,5 @@
 using LowCortisol.Platform.API.Shared.Application.Results;
+using LowCortisol.Platform.API.Shared.Interfaces.Rest.ProblemDetails;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LowCortisol.Platform.API.DeviceControl.Interfaces.Rest.Transform;
@@ -8,17 +9,21 @@ public static class DeviceControlActionResultAssembler
     public static IActionResult ToActionResult<TEntity, TResource>(
         ControllerBase controller,
         Result<TEntity> result,
-        Func<TEntity, TResource> successAction)
+        Func<TEntity, TResource> successAction,
+        Func<TResource, IActionResult>? successResult = null)
         where TEntity : class
     {
         if (result.IsSuccess && result.Value is not null)
         {
-            return controller.Ok(successAction(result.Value));
+            var resource = successAction(result.Value);
+            return successResult?.Invoke(resource) ?? controller.Ok(resource);
         }
 
-        return controller.Problem(
-            title: "Device control request could not be completed.",
-            detail: result.Error,
+        return controller.LocalizedProblem(
+            titleKey: "Errors.DeviceControl.RequestFailed",
+            titleFallback: "Device control request could not be completed.",
+            detailKey: result.Error,
+            detailFallback: result.Error,
             statusCode: MapStatusCode(result.Error));
     }
 
