@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Errors.DeviceControl.RequestFailed" xml:space="preserve">
+    <value>The device control request could not be completed.</value>
+  </data>
+  <data name="Errors.Iam.RequestFailed" xml:space="preserve">
+    <value>The identity and access request could not be completed.</value>
+  </data>
+  <data name="Errors.Monitoring.RequestFailed" xml:space="preserve">
+    <value>The monitoring request could not be completed.</value>
+  </data>
+  <data name="Errors.NotFound.Title" xml:space="preserve">
+    <value>The requested resource was not found.</value>
+  </data>
+  <data name="Errors.Notification.RequestFailed" xml:space="preserve">
+    <value>The notification request could not be completed.</value>
+  </data>
+  <data name="Errors.Workplace.RequestFailed" xml:space="preserve">
+    <value>The workplace request could not be completed.</value>
+  </data>
+  <data name="InvalidCredentials" xml:space="preserve">
+    <value>The credentials are not valid.</value>
+  </data>
+  <data name="TokenSecretNotConfigured" xml:space="preserve">
+    <value>The JWT signing key is not configured.</value>
+  </data>
+  <data name="UserEmailDuplicated" xml:space="preserve">
+    <value>A user with that email is already registered.</value>
+  </data>
+  <data name="UserEmailRequired" xml:space="preserve">
+    <value>The user email is required.</value>
+  </data>
+  <data name="UserNameRequired" xml:space="preserve">
+    <value>The user name is required.</value>
+  </data>
+  <data name="UserPasswordRequired" xml:space="preserve">
+    <value>The user password is required.</value>
+  </data>
+  <data name="UserPasswordTooShort" xml:space="preserve">
+    <value>The password must have at least 8 characters.</value>
+  </data>
+</root>
