@@ -242,14 +242,20 @@ if (!useInMemory && app.Configuration.GetValue<bool>("Persistence:CreateDatabase
     await PostgreSqlDatabaseInitializer.EnsureDatabaseCreatedAsync(connectionString!, app.Logger);
 }
 
-if (!useInMemory && app.Configuration.GetValue<bool>("Persistence:SeedOnStartup"))
+var applyMigrationsOnStartup = app.Configuration.GetValue<bool>("Persistence:ApplyMigrationsOnStartup");
+var seedOnStartup = app.Configuration.GetValue<bool>("Persistence:SeedOnStartup");
+
+if (!useInMemory && (applyMigrationsOnStartup || seedOnStartup))
 {
     using var scope = app.Services.CreateScope();
     var context = scope.ServiceProvider.GetRequiredService<EfAppDbContext>();
     await context.Database.MigrateAsync();
 
-    var seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
-    await seeder.SeedAsync();
+    if (seedOnStartup)
+    {
+        var seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
+        await seeder.SeedAsync();
+    }
 }
 
 app.UseHttpsRedirection();
