@@ -4,12 +4,16 @@ using LowCortisol.Platform.API.Monitoring.Domain.Model.Entities;
 using LowCortisol.Platform.API.Monitoring.Domain.Model.ValueObjects;
 using LowCortisol.Platform.API.Notification.Domain.Model.Aggregates;
 using LowCortisol.Platform.API.Notification.Domain.Model.ValueObjects;
+using LowCortisol.Platform.API.Plan.Domain.Model.Entities;
 using LowCortisol.Platform.API.Shared.Infrastructure.Persistence.EntityFrameworkCore.Configuration;
+using LowCortisol.Platform.API.Support.Domain.Model.Entities;
+using LowCortisol.Platform.API.Support.Domain.Model.ValueObjects;
 using LowCortisol.Platform.API.Workplace.Domain.Model.Aggregates;
 using LowCortisol.Platform.API.Workplace.Domain.Model.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 
 using MonitoringResourceType = LowCortisol.Platform.API.Monitoring.Domain.Model.ValueObjects.ResourceType;
+using PlanAggregate = LowCortisol.Platform.API.Plan.Domain.Model.Aggregates.Plan;
 using WorkplaceResourceType = LowCortisol.Platform.API.Workplace.Domain.Model.ValueObjects.ResourceType;
 
 namespace LowCortisol.Platform.API.Shared.Infrastructure.Persistence.EntityFrameworkCore.Seed;
@@ -25,6 +29,9 @@ public sealed class DatabaseSeeder
 
     public async Task SeedAsync(CancellationToken cancellationToken = default)
     {
+        await SeedPlanCatalogAsync(cancellationToken);
+        await SeedSupportCatalogAsync(cancellationToken);
+
         if (await _context.Sites.AnyAsync(cancellationToken)) return;
 
         var site = new Site(
@@ -181,6 +188,92 @@ public sealed class DatabaseSeeder
         await _context.NotificationChannels.AddAsync(inAppChannel, cancellationToken);
         await _context.Alerts.AddAsync(alert, cancellationToken);
         await _context.Incidents.AddAsync(incident, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
+    }
+
+    private async Task SeedPlanCatalogAsync(CancellationToken cancellationToken)
+    {
+        if (await _context.Plans.AnyAsync(cancellationToken)) return;
+
+        var essential = new PlanAggregate(
+            Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1"),
+            "essential",
+            "Essential",
+            "Para monitoreo inicial de una sede.",
+            49,
+            "PEN",
+            "monthly",
+            1,
+            5);
+        var professional = new PlanAggregate(
+            Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa2"),
+            "professional",
+            "Professional",
+            "Para equipos que operan varias sedes.",
+            129,
+            "PEN",
+            "monthly",
+            5,
+            35,
+            true);
+        var enterprise = new PlanAggregate(
+            Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa3"),
+            "enterprise",
+            "Enterprise",
+            "Para operaciones con alta criticidad.",
+            299,
+            "PEN",
+            "monthly",
+            25,
+            250);
+
+        essential.AddFeature(Guid.Parse("abababab-abab-abab-abab-ababababab01"), "Monitoreo de agua y gas", "Control de consumo por sede.");
+        essential.AddFeature(Guid.Parse("abababab-abab-abab-abab-ababababab02"), "Alertas operativas", "Alertas dentro de la aplicacion.");
+        professional.AddFeature(Guid.Parse("abababab-abab-abab-abab-ababababab03"), "Sedes y dispositivos ampliados", "Operacion de varias sedes y dispositivos.");
+        professional.AddFeature(Guid.Parse("abababab-abab-abab-abab-ababababab04"), "Reportes de consumo", "Reportes por periodo y recurso.");
+        professional.AddFeature(Guid.Parse("abababab-abab-abab-abab-ababababab05"), "Canales de alerta configurables", "Configuracion operativa de notificaciones.");
+        enterprise.AddFeature(Guid.Parse("abababab-abab-abab-abab-ababababab06"), "Operacion multi sede", "Cobertura para operaciones distribuidas.");
+        enterprise.AddFeature(Guid.Parse("abababab-abab-abab-abab-ababababab07"), "Alertas prioritarias", "Priorizacion de incidentes criticos.");
+        enterprise.AddFeature(Guid.Parse("abababab-abab-abab-abab-ababababab08"), "Soporte operativo avanzado", "Atencion para continuidad operativa.");
+
+        await _context.Plans.AddRangeAsync([essential, professional, enterprise], cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
+    }
+
+    private async Task SeedSupportCatalogAsync(CancellationToken cancellationToken)
+    {
+        if (!await _context.SupportAgents.AnyAsync(cancellationToken))
+        {
+            await _context.SupportAgents.AddRangeAsync(
+                [
+                    new SupportAgent(Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb1"), "Lucia Ramos", "Monitoreo", SupportAgentStatus.Available),
+                    new SupportAgent(Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb2"), "Mateo Silva", "Dispositivos", SupportAgentStatus.Busy)
+                ],
+                cancellationToken);
+        }
+
+        if (!await _context.KnowledgeArticles.AnyAsync(cancellationToken))
+        {
+            await _context.KnowledgeArticles.AddRangeAsync(
+                [
+                    new KnowledgeArticle(
+                        Guid.Parse("cccccccc-cccc-cccc-cccc-ccccccccccc1"),
+                        "Como interpretar una alerta critica",
+                        "Guia para priorizar eventos de agua y gas con impacto operativo.",
+                        "Alertas",
+                        24,
+                        "Revisa el recurso afectado, la sede, la valvula asociada y el limite superado antes de iniciar la mitigacion."),
+                    new KnowledgeArticle(
+                        Guid.Parse("cccccccc-cccc-cccc-cccc-ccccccccccc2"),
+                        "Buenas practicas para sensores",
+                        "Recomendaciones para mantener lecturas estables en sedes activas.",
+                        "Dispositivos",
+                        18,
+                        "Cada valvula operativa debe tener un sensor del mismo recurso y pertenecer al mismo grupo fisico.")
+                ],
+                cancellationToken);
+        }
+
         await _context.SaveChangesAsync(cancellationToken);
     }
 }
