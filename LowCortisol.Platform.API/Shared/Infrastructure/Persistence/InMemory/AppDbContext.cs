@@ -7,11 +7,17 @@ using LowCortisol.Platform.API.Monitoring.Domain.Model.ValueObjects;
 using LowCortisol.Platform.API.Notification.Domain.Model.Aggregates;
 using LowCortisol.Platform.API.Notification.Domain.Model.Entities;
 using LowCortisol.Platform.API.Notification.Domain.Model.ValueObjects;
+using LowCortisol.Platform.API.Plan.Domain.Model.Aggregates;
+using LowCortisol.Platform.API.Plan.Domain.Model.Entities;
+using LowCortisol.Platform.API.Support.Domain.Model.Aggregates;
+using LowCortisol.Platform.API.Support.Domain.Model.Entities;
+using LowCortisol.Platform.API.Support.Domain.Model.ValueObjects;
 using LowCortisol.Platform.API.Workplace.Domain.Model.Aggregates;
 using LowCortisol.Platform.API.Workplace.Domain.Model.Entities;
 using LowCortisol.Platform.API.Workplace.Domain.Model.ValueObjects;
 
 using MonitoringResourceType = LowCortisol.Platform.API.Monitoring.Domain.Model.ValueObjects.ResourceType;
+using PlanAggregate = LowCortisol.Platform.API.Plan.Domain.Model.Aggregates.Plan;
 using WorkplaceResourceType = LowCortisol.Platform.API.Workplace.Domain.Model.ValueObjects.ResourceType;
 
 namespace LowCortisol.Platform.API.Shared.Infrastructure.Persistence.InMemory;
@@ -41,12 +47,25 @@ public sealed class AppDbContext
     public List<NotificationChannel> NotificationChannels { get; } = [];
     public List<AlertDelivery> AlertDeliveries { get; } = [];
     public List<User> Users { get; } = [];
+    public List<PlanAggregate> Plans { get; } = [];
+    public List<PlanFeature> PlanFeatures { get; } = [];
+    public List<Subscription> Subscriptions { get; } = [];
+    public List<Payment> Payments { get; } = [];
+    public List<ServiceRequest> ServiceRequests { get; } = [];
+    public List<SupportTicket> SupportTickets { get; } = [];
+    public List<SupportMessage> SupportMessages { get; } = [];
+    public List<SupportConversation> SupportConversations { get; } = [];
+    public List<SupportAgent> SupportAgents { get; } = [];
+    public List<KnowledgeArticle> KnowledgeArticles { get; } = [];
 
     public Task SaveChangesAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
 
     private void Seed()
     {
         if (Sites.Count > 0) return;
+
+        SeedPlanCatalog();
+        SeedSupportCatalog();
 
         var miraflores = new Site(
             Guid.Parse("11111111-1111-1111-1111-111111111111"),
@@ -201,5 +220,85 @@ public sealed class AppDbContext
         Alerts.Add(criticalAlert);
         Incidents.Add(criticalIncident);
         AlertDeliveries.Add(criticalDelivery);
+    }
+
+    private void SeedPlanCatalog()
+    {
+        if (Plans.Count > 0) return;
+
+        var essential = new PlanAggregate(
+            Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1"),
+            "essential",
+            "Essential",
+            "Para monitoreo inicial de una sede.",
+            49,
+            "PEN",
+            "monthly",
+            1,
+            5);
+        var professional = new PlanAggregate(
+            Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa2"),
+            "professional",
+            "Professional",
+            "Para equipos que operan varias sedes.",
+            129,
+            "PEN",
+            "monthly",
+            5,
+            35,
+            true);
+        var enterprise = new PlanAggregate(
+            Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa3"),
+            "enterprise",
+            "Enterprise",
+            "Para operaciones con alta criticidad.",
+            299,
+            "PEN",
+            "monthly",
+            25,
+            250);
+
+        PlanFeatures.AddRange([
+            essential.AddFeature(Guid.Parse("abababab-abab-abab-abab-ababababab01"), "Monitoreo de agua y gas", "Control de consumo por sede."),
+            essential.AddFeature(Guid.Parse("abababab-abab-abab-abab-ababababab02"), "Alertas operativas", "Alertas dentro de la aplicacion."),
+            professional.AddFeature(Guid.Parse("abababab-abab-abab-abab-ababababab03"), "Sedes y dispositivos ampliados", "Operacion de varias sedes y dispositivos."),
+            professional.AddFeature(Guid.Parse("abababab-abab-abab-abab-ababababab04"), "Reportes de consumo", "Reportes por periodo y recurso."),
+            professional.AddFeature(Guid.Parse("abababab-abab-abab-abab-ababababab05"), "Canales de alerta configurables", "Configuracion operativa de notificaciones."),
+            enterprise.AddFeature(Guid.Parse("abababab-abab-abab-abab-ababababab06"), "Operacion multi sede", "Cobertura para operaciones distribuidas."),
+            enterprise.AddFeature(Guid.Parse("abababab-abab-abab-abab-ababababab07"), "Alertas prioritarias", "Priorizacion de incidentes criticos."),
+            enterprise.AddFeature(Guid.Parse("abababab-abab-abab-abab-ababababab08"), "Soporte operativo avanzado", "Atencion para continuidad operativa.")
+        ]);
+
+        Plans.AddRange([essential, professional, enterprise]);
+    }
+
+    private void SeedSupportCatalog()
+    {
+        if (SupportAgents.Count > 0)
+        {
+            return;
+        }
+
+        SupportAgents.AddRange([
+            new SupportAgent(Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb1"), "Lucia Ramos", "Monitoreo", SupportAgentStatus.Available),
+            new SupportAgent(Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb2"), "Mateo Silva", "Dispositivos", SupportAgentStatus.Busy)
+        ]);
+
+        KnowledgeArticles.AddRange([
+            new KnowledgeArticle(
+                Guid.Parse("cccccccc-cccc-cccc-cccc-ccccccccccc1"),
+                "Como interpretar una alerta critica",
+                "Guia para priorizar eventos de agua y gas con impacto operativo.",
+                "Alertas",
+                24,
+                "Revisa el recurso afectado, la sede, la valvula asociada y el limite superado antes de iniciar la mitigacion."),
+            new KnowledgeArticle(
+                Guid.Parse("cccccccc-cccc-cccc-cccc-ccccccccccc2"),
+                "Buenas practicas para sensores",
+                "Recomendaciones para mantener lecturas estables en sedes activas.",
+                "Dispositivos",
+                18,
+                "Cada valvula operativa debe tener un sensor del mismo recurso y pertenecer al mismo grupo fisico.")
+        ]);
     }
 }
