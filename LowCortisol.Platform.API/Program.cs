@@ -26,11 +26,21 @@ using LowCortisol.Platform.API.Notification.Application.Internal.CommandServices
 using LowCortisol.Platform.API.Notification.Application.Internal.QueryServices;
 using LowCortisol.Platform.API.Notification.Application.QueryServices;
 using LowCortisol.Platform.API.Notification.Domain.Repositories;
+using LowCortisol.Platform.API.Plan.Application.CommandServices;
+using LowCortisol.Platform.API.Plan.Application.Internal.CommandServices;
+using LowCortisol.Platform.API.Plan.Application.Internal.QueryServices;
+using LowCortisol.Platform.API.Plan.Application.QueryServices;
+using LowCortisol.Platform.API.Plan.Domain.Repositories;
 using LowCortisol.Platform.API.Shared.Domain.Repositories;
 using LowCortisol.Platform.API.Shared.Infrastructure.Persistence.EntityFrameworkCore.Configuration;
 using LowCortisol.Platform.API.Shared.Infrastructure.Persistence.EntityFrameworkCore.Interceptors;
 using LowCortisol.Platform.API.Shared.Infrastructure.Persistence.EntityFrameworkCore.Seed;
 using LowCortisol.Platform.API.Shared.Interfaces.Rest.OpenApi;
+using LowCortisol.Platform.API.Support.Application.CommandServices;
+using LowCortisol.Platform.API.Support.Application.Internal.CommandServices;
+using LowCortisol.Platform.API.Support.Application.Internal.QueryServices;
+using LowCortisol.Platform.API.Support.Application.QueryServices;
+using LowCortisol.Platform.API.Support.Domain.Repositories;
 using LowCortisol.Platform.API.Workplace.Application.CommandServices;
 using LowCortisol.Platform.API.Workplace.Application.Internal.CommandServices;
 using LowCortisol.Platform.API.Workplace.Application.Internal.QueryServices;
@@ -53,9 +63,18 @@ using EfDeviceCommandRepository = LowCortisol.Platform.API.DeviceControl.Infrast
 using EfDeviceRepository = LowCortisol.Platform.API.DeviceControl.Infrastructure.Persistence.EntityFrameworkCore.Repositories.DeviceRepository;
 using EfIncidentRepository = LowCortisol.Platform.API.Notification.Infrastructure.Persistence.EntityFrameworkCore.Repositories.IncidentRepository;
 using EfNotificationChannelRepository = LowCortisol.Platform.API.Notification.Infrastructure.Persistence.EntityFrameworkCore.Repositories.NotificationChannelRepository;
+using EfPaymentRepository = LowCortisol.Platform.API.Plan.Infrastructure.Persistence.EntityFrameworkCore.Repositories.PaymentRepository;
+using EfPlanRepository = LowCortisol.Platform.API.Plan.Infrastructure.Persistence.EntityFrameworkCore.Repositories.PlanRepository;
 using EfRoomRepository = LowCortisol.Platform.API.Workplace.Infrastructure.Persistence.EntityFrameworkCore.Repositories.RoomRepository;
 using EfSensorRepository = LowCortisol.Platform.API.DeviceControl.Infrastructure.Persistence.EntityFrameworkCore.Repositories.SensorRepository;
+using EfServiceRequestRepository = LowCortisol.Platform.API.Plan.Infrastructure.Persistence.EntityFrameworkCore.Repositories.ServiceRequestRepository;
 using EfSiteRepository = LowCortisol.Platform.API.Workplace.Infrastructure.Persistence.EntityFrameworkCore.Repositories.SiteRepository;
+using EfSubscriptionRepository = LowCortisol.Platform.API.Plan.Infrastructure.Persistence.EntityFrameworkCore.Repositories.SubscriptionRepository;
+using EfKnowledgeArticleRepository = LowCortisol.Platform.API.Support.Infrastructure.Persistence.EntityFrameworkCore.Repositories.KnowledgeArticleRepository;
+using EfSupportAgentRepository = LowCortisol.Platform.API.Support.Infrastructure.Persistence.EntityFrameworkCore.Repositories.SupportAgentRepository;
+using EfSupportConversationRepository = LowCortisol.Platform.API.Support.Infrastructure.Persistence.EntityFrameworkCore.Repositories.SupportConversationRepository;
+using EfSupportMessageRepository = LowCortisol.Platform.API.Support.Infrastructure.Persistence.EntityFrameworkCore.Repositories.SupportMessageRepository;
+using EfSupportTicketRepository = LowCortisol.Platform.API.Support.Infrastructure.Persistence.EntityFrameworkCore.Repositories.SupportTicketRepository;
 using EfThresholdRepository = LowCortisol.Platform.API.Monitoring.Infrastructure.Persistence.EntityFrameworkCore.Repositories.ThresholdRepository;
 using EfUnitOfWork = LowCortisol.Platform.API.Shared.Infrastructure.Persistence.EntityFrameworkCore.Repositories.UnitOfWork;
 using EfValveOperationRepository = LowCortisol.Platform.API.DeviceControl.Infrastructure.Persistence.EntityFrameworkCore.Repositories.ValveOperationRepository;
@@ -70,9 +89,18 @@ using InMemoryDeviceCommandRepository = LowCortisol.Platform.API.DeviceControl.I
 using InMemoryDeviceRepository = LowCortisol.Platform.API.DeviceControl.Infrastructure.Persistence.InMemory.Repositories.DeviceRepository;
 using InMemoryIncidentRepository = LowCortisol.Platform.API.Notification.Infrastructure.Persistence.InMemory.Repositories.IncidentRepository;
 using InMemoryNotificationChannelRepository = LowCortisol.Platform.API.Notification.Infrastructure.Persistence.InMemory.Repositories.NotificationChannelRepository;
+using InMemoryPaymentRepository = LowCortisol.Platform.API.Plan.Infrastructure.Persistence.InMemory.Repositories.PaymentRepository;
+using InMemoryPlanRepository = LowCortisol.Platform.API.Plan.Infrastructure.Persistence.InMemory.Repositories.PlanRepository;
 using InMemoryRoomRepository = LowCortisol.Platform.API.Workplace.Infrastructure.Persistence.InMemory.Repositories.RoomRepository;
 using InMemorySensorRepository = LowCortisol.Platform.API.DeviceControl.Infrastructure.Persistence.InMemory.Repositories.SensorRepository;
+using InMemoryServiceRequestRepository = LowCortisol.Platform.API.Plan.Infrastructure.Persistence.InMemory.Repositories.ServiceRequestRepository;
 using InMemorySiteRepository = LowCortisol.Platform.API.Workplace.Infrastructure.Persistence.InMemory.Repositories.SiteRepository;
+using InMemorySubscriptionRepository = LowCortisol.Platform.API.Plan.Infrastructure.Persistence.InMemory.Repositories.SubscriptionRepository;
+using InMemoryKnowledgeArticleRepository = LowCortisol.Platform.API.Support.Infrastructure.Persistence.InMemory.Repositories.KnowledgeArticleRepository;
+using InMemorySupportAgentRepository = LowCortisol.Platform.API.Support.Infrastructure.Persistence.InMemory.Repositories.SupportAgentRepository;
+using InMemorySupportConversationRepository = LowCortisol.Platform.API.Support.Infrastructure.Persistence.InMemory.Repositories.SupportConversationRepository;
+using InMemorySupportMessageRepository = LowCortisol.Platform.API.Support.Infrastructure.Persistence.InMemory.Repositories.SupportMessageRepository;
+using InMemorySupportTicketRepository = LowCortisol.Platform.API.Support.Infrastructure.Persistence.InMemory.Repositories.SupportTicketRepository;
 using InMemoryThresholdRepository = LowCortisol.Platform.API.Monitoring.Infrastructure.Persistence.InMemory.Repositories.ThresholdRepository;
 using InMemoryUnitOfWork = LowCortisol.Platform.API.Shared.Infrastructure.Persistence.InMemory.UnitOfWork;
 using InMemoryValveOperationRepository = LowCortisol.Platform.API.DeviceControl.Infrastructure.Persistence.InMemory.Repositories.ValveOperationRepository;
@@ -105,7 +133,7 @@ builder.Services.AddSwaggerGen(options =>
         {
             Title = "LowCortisol Platform API",
             Version = "v1",
-            Description = "REST API for LowCortisol workplace, device control, monitoring and notification operations."
+            Description = "REST API for LowCortisol workplace, device control, monitoring, notification, plan and support operations."
         });
     options.AddSecurityDefinition(
         "Bearer",
@@ -158,6 +186,15 @@ if (useInMemory)
     builder.Services.AddScoped<IIncidentRepository, InMemoryIncidentRepository>();
     builder.Services.AddScoped<INotificationChannelRepository, InMemoryNotificationChannelRepository>();
     builder.Services.AddScoped<IUserRepository, InMemoryUserRepository>();
+    builder.Services.AddScoped<IPlanRepository, InMemoryPlanRepository>();
+    builder.Services.AddScoped<ISubscriptionRepository, InMemorySubscriptionRepository>();
+    builder.Services.AddScoped<IPaymentRepository, InMemoryPaymentRepository>();
+    builder.Services.AddScoped<IServiceRequestRepository, InMemoryServiceRequestRepository>();
+    builder.Services.AddScoped<ISupportTicketRepository, InMemorySupportTicketRepository>();
+    builder.Services.AddScoped<ISupportMessageRepository, InMemorySupportMessageRepository>();
+    builder.Services.AddScoped<ISupportConversationRepository, InMemorySupportConversationRepository>();
+    builder.Services.AddScoped<ISupportAgentRepository, InMemorySupportAgentRepository>();
+    builder.Services.AddScoped<IKnowledgeArticleRepository, InMemoryKnowledgeArticleRepository>();
 }
 else
 {
@@ -187,6 +224,15 @@ else
     builder.Services.AddScoped<IIncidentRepository, EfIncidentRepository>();
     builder.Services.AddScoped<INotificationChannelRepository, EfNotificationChannelRepository>();
     builder.Services.AddScoped<IUserRepository, EfUserRepository>();
+    builder.Services.AddScoped<IPlanRepository, EfPlanRepository>();
+    builder.Services.AddScoped<ISubscriptionRepository, EfSubscriptionRepository>();
+    builder.Services.AddScoped<IPaymentRepository, EfPaymentRepository>();
+    builder.Services.AddScoped<IServiceRequestRepository, EfServiceRequestRepository>();
+    builder.Services.AddScoped<ISupportTicketRepository, EfSupportTicketRepository>();
+    builder.Services.AddScoped<ISupportMessageRepository, EfSupportMessageRepository>();
+    builder.Services.AddScoped<ISupportConversationRepository, EfSupportConversationRepository>();
+    builder.Services.AddScoped<ISupportAgentRepository, EfSupportAgentRepository>();
+    builder.Services.AddScoped<IKnowledgeArticleRepository, EfKnowledgeArticleRepository>();
 }
 
 builder.Services.AddScoped<IPasswordHashingService, BCryptPasswordHashingService>();
@@ -218,6 +264,10 @@ builder.Services.AddScoped<IIncidentQueryService, IncidentQueryService>();
 builder.Services.AddScoped<INotificationChannelCommandService, NotificationChannelCommandService>();
 builder.Services.AddScoped<INotificationChannelQueryService, NotificationChannelQueryService>();
 builder.Services.AddScoped<INotificationSummaryQueryService, NotificationSummaryQueryService>();
+builder.Services.AddScoped<IPlanCommandService, PlanCommandService>();
+builder.Services.AddScoped<IPlanQueryService, PlanQueryService>();
+builder.Services.AddScoped<ISupportCommandService, SupportCommandService>();
+builder.Services.AddScoped<ISupportQueryService, SupportQueryService>();
 
 var app = builder.Build();
 
